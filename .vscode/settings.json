@@ -1,0 +1,10 @@
+{
+	"editor.formatOnSave": true,
+	"editor.insertSpaces": false,
+	"editor.tabSize": 4,
+	"editor.autoIndent": "advanced",
+	"svelte.plugin.typescript.enable": true,
+	"editor.codeActionsOnSave": {
+		"source.fixAll": true
+	}
+}
