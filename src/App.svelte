@@ -226,14 +226,16 @@
 	};
 
 	const checkForValidTen = () => {
-		const sum = selectedCards.reduce((running, curr) => {
-			return running + cardValueMap[curr.card.value];
+		const parts = selectedCards.map((c) => cardValueMap[c.card.value]);
+		const sum = parts.reduce((running, curr) => {
+			return running + curr;
 		}, 0);
+
+		const equationStr = `${parts.join(' + ')} = ${sum}`;
 
 		// Woo!
 		if (sum === 10) {
-			console.log('Yes!');
-			notifier.success(`Great job! 🙌`);
+			notifier.success(`${equationStr}. Great job! 🙌`);
 			// Move over to discard pile
 			discardCards(selectedCards.map((s) => s.card));
 		}
@@ -241,7 +243,7 @@
 		else if (sum > 10) {
 			// @TODO - make this whole method async to avoid using timeout and re-assignment
 			// leave time for unselect animation
-			notifier.warning(`You went over ten 😭`);
+			notifier.warning(`${equationStr}. Not 10 😭`);
 			setTimeout(() => {
 				resetSelected();
 				rows = rows;
@@ -266,7 +268,7 @@
 	};
 	let stopwatch: Stopwatch;
 
-	const resumeOrStartGame = (forceRestart = false) => {
+	const resumeOrStartGame = (forceRestart: boolean = false) => {
 		let resumeDelay = 0;
 		if (gameStatus === 'new' || gameStatus === 'complete' || forceRestart) {
 			// Give a little extra time to look at game board
@@ -285,20 +287,23 @@
 		}, resumeDelay);
 	};
 	// @TODO - remove, debugging
-	window['getRows'] = () => {
-		return rows;
-	};
-	window['forceUpdate'] = () => {
-		rows = rows;
-	};
-	window['simulateEvents'] = {
-		winGame: () => {
-			gameStatus = 'active';
-			// move all cards to discard
-			discardPile = rows.flat(2);
-			rows = [];
-			checkForGameComplete();
+	window['testObjs'] = {
+		simulate: {
+			winGame: () => {
+				gameStatus = 'active';
+				// move all cards to discard
+				discardPile = rows.flat(2);
+				rows = [];
+				checkForGameComplete();
+			},
 		},
+		forceUpdate: () => {
+			rows = rows;
+		},
+		getRows: () => {
+			return rows;
+		},
+		notifier,
 	};
 
 	onMount(() => {
@@ -394,7 +399,9 @@
 		<!-- Main Menu -->
 		<GameOverlay gameDuration={gameDuration} gameStatus={gameStatus} onResetClick={() => {
 			resumeOrStartGame(true);
-		}} onPlayClick={resumeOrStartGame} />
+		}} onPlayClick={() => {
+			resumeOrStartGame(false);
+		}} />
 	</div>
 </main>
 

@@ -65,6 +65,22 @@ button:focus {
 
 
 /**
+* Toasts
+*/
+ul.toasts {
+	bottom: 5%;
+	top: unset;
+}
+ul.toasts .toast {
+	border-radius: 4px;
+	margin: 1vh 0.8vw !important;
+}
+ul.toasts .toast .content {
+	color: black;
+	font-size: 1.3rem;
+}
+
+/**
 * Fancy buttons
 */
 .fancyBtn {

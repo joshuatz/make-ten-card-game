@@ -53,15 +53,17 @@
 				{/if}
 			</div>
 			<div class="row aboutSection">
-				<p>
+				<p class="row center">
 					This is an addition game, where you try to "make ten" out of
-					different combinations of playing cards, pick off the top of
-					the stacks. You can also move top cards to empty spots, once
-					you have cleared a stack.
+					different combinations of playing cards, picking them off
+					the top of the stacks. You can also move top cards to empty
+					spots, once you have cleared a stack. Aces are equal to 1.
 				</p>
-				<p>Keep going until all the cards are in the discard pile!</p>
-				<p>
-					Built by
+				<p class="row center">
+					Keep going until all the cards are in the discard pile!
+				</p>
+				<p class="row">
+					Built by&nbsp;
 					<a
 						href="https://joshuatz.com/?utm_source=make-ten-game"
 						rel="noopener"
