@@ -77,6 +77,9 @@ button:focus {
 /**
 * Responsive Design
 */
+.flex {
+	display: flex;
+}
 .row {
 	display: flex;
 	flex-wrap: wrap;

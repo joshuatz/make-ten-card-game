@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { maxCardWidth } from '../constants';
+	import { spaceJoin } from '../utils';
 	export let suite: CardSuite = 'hearts';
 	export let value: CardValue = 'A';
+	let classStr = '';
+	export { classStr as class };
 	let cardSvgPath: string;
 	$: {
 		const svgFolder = `/images/cards`;
@@ -11,7 +14,7 @@
 	}
 </script>
 
-<div class="card">
+<div class={spaceJoin(['card', classStr])}>
 	<img
 		src={cardSvgPath}
 		alt={`${value} of ${suite} card.`}

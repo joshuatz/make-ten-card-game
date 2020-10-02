@@ -1,11 +1,39 @@
 <script lang="ts">
 	export let appName: string;
-	import { cardVOffset, maxCardHeight, cardValueMap } from './constants';
+	import {
+		cardVOffset,
+		maxCardHeight,
+		cardValueMap,
+		toastDelayMs,
+	} from './constants';
 	import { chunkArr, shuffleArr } from './utils/index';
 	import Card from './components/Card.svelte';
 	import CardPlace from './components/CardPlace.svelte';
+	import {
+		NotificationDisplay,
+		notifier,
+	} from '@beyonk/svelte-notifications';
+	import { crossfade } from 'svelte/transition';
+	import { quintOut } from 'svelte/easing';
 
 	const stackSize = 3;
+
+	const [send, receive] = crossfade({
+		duration: (d) => Math.sqrt(d * 200),
+		fallback(node, params) {
+			const style = getComputedStyle(node);
+			const transform = style.transform === 'none' ? '' : style.transform;
+
+			return {
+				duration: 600,
+				easing: quintOut,
+				css: (t) => `
+					transform: ${transform} scale(${t});
+					opacity: ${t}
+				`,
+			};
+		},
+	});
 
 	interface IPlayCard extends ICard {
 		key: string;
@@ -65,6 +93,30 @@
 		selectedCards = [];
 	};
 
+	const discardCards = (cards: IPlayCard[]) => {
+		const keys = cards.map((c) => c.key);
+		// Remove from selected
+		selectedCards = selectedCards.filter((s) => !keys.includes(s.key));
+		// Add to discard pile
+		keys.forEach((k) => {
+			for (const row of rows) {
+				for (const stack of row) {
+					for (let i = 0; i < stack.length; i++) {
+						const card = stack[i];
+						if (card.key === k) {
+							// Remove in place
+							discardPile.push(stack.splice(i, 1)[0]);
+							break;
+						}
+					}
+				}
+			}
+		});
+		// Update
+		discardPile = discardPile;
+		rows = rows;
+	};
+
 	const fullReset = () => {
 		const updatedRows = generateCardAssortment().rows;
 		rows = [...updatedRows];
@@ -108,21 +160,28 @@
 		// Woo!
 		if (sum === 10) {
 			console.log('Yes!');
+			notifier.success(`Great job! 🙌`);
+			// Move over to discard pile
+			discardCards(selectedCards);
 		}
 		// If over 10, flash warning and reset cards
 		else if (sum > 10) {
-			console.log('You went over ten 😭');
 			// @TODO - make this whole method async to avoid using timeout and re-assignment
 			// leave time for unselect animation
+			notifier.warning(`You went over ten 😭`);
 			setTimeout(() => {
 				resetSelected();
 				rows = rows;
 			}, 500);
 		}
 	};
+	const test = () => {
+		const topLeftCard = rows[0][0][2];
+	};
 </script>
 
 <main>
+	<NotificationDisplay timeout={toastDelayMs} />
 	<div class="row center">
 		<h1 class="xs6">{appName}</h1>
 	</div>
@@ -135,8 +194,10 @@
 				{#each row as stack, stackNum}
 					<div class="cardStack center">
 						<CardPlace>
-							{#each stack as card, i}
+							{#each stack as card, i (card.key)}
 								<div
+									in:receive={{ key: card.key }}
+									out:send={{ key: card.key }}
 									class="cardWrapper"
 									data-depth={i}
 									data-selected={card.selected || null}
@@ -145,6 +206,7 @@
 										handleCardClick(card, rowNum, stackNum, i);
 									}}>
 									<Card
+										class="flex"
 										suite={card.suite}
 										value={card.value} />
 								</div>
@@ -154,9 +216,27 @@
 				{/each}
 			</div>
 		{/each}
-		<CardPlace />
+
+		<!-- Discard Pile -->
+		<CardPlace>
+			{#each discardPile as dCard, i (dCard.key)}
+				<div
+					in:receive={{ key: dCard.key }}
+					out:send={{ key: dCard.key }}
+					class="cardWrapper"
+					data-depth={i}
+					style="margin-top: {i ? -1 * maxCardHeight + 4 : 0}px"
+				>
+					<Card
+						class="flex"
+						suite={dCard.suite}
+						value={dCard.value} />
+				</div>
+			{/each}
+		</CardPlace>
 	</div>
 	<button on:click={fullReset}>Reset Game</button>
+	<button on:click={test}>Test</button>
 </main>
 
 <style>

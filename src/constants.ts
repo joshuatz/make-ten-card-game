@@ -21,3 +21,6 @@ export const cardValueMap: Record<CardValue, number> = {
 	Q: 10,
 	K: 10,
 };
+
+// Some config stuff
+export const toastDelayMs = 3 * 1000;
