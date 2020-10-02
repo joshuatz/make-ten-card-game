@@ -1,5 +1,6 @@
 {
-  "name": "svelte-app",
+  "name": "make-ten-game",
+  "displayName": "Make Ten Game",
   "version": "1.0.0",
   "scripts": {
     "build": "rollup -c",

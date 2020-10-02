@@ -1,16 +1,23 @@
 <script lang="ts">
-	import { cardVOffset, maxCardHeight } from './constants';
+	export let appName: string;
+	import { cardVOffset, maxCardHeight, cardValueMap } from './constants';
 	import { chunkArr, shuffleArr } from './utils/index';
 	import Card from './components/Card.svelte';
 	import CardPlace from './components/CardPlace.svelte';
 
 	const stackSize = 3;
 
+	interface IPlayCard extends ICard {
+		key: string;
+		selected?: boolean;
+	}
+
 	// prettier-ignore
 	const rowHeight = maxCardHeight + ((maxCardHeight - Math.abs(cardVOffset)) * stackSize);
 
 	// State stuff
-	const discardPile: ICard[] = [];
+	let discardPile: IPlayCard[] = [];
+	let selectedCards: IPlayCard[] = [];
 
 	const generateCardAssortment = () => {
 		// generate card grid data
@@ -31,10 +38,11 @@
 			'8',
 			'9',
 		];
-		const cards: ICard[] = [];
+		const cards: IPlayCard[] = [];
 		suites.forEach((s) => {
 			indexes.forEach((i) => {
 				cards.push({
+					key: `${i}${s}`,
 					value: i,
 					suite: s,
 				});
@@ -44,22 +52,26 @@
 		// Shuffle cards and split into 3 x 4 (12 stacks of 3)
 		shuffleArr(cards);
 		// Split by into stacks of 3
-		const stacks: Array<Array<ICard>> = chunkArr(cards, 3);
+		const stacks: Array<Array<IPlayCard>> = chunkArr(cards, 3);
 		// Group by rows of three
-		const rows: Array<Array<Array<ICard>>> = chunkArr(stacks, 4);
+		const rows: Array<Array<Array<IPlayCard>>> = chunkArr(stacks, 4);
 		console.log(rows);
 		return { stacks, rows, cards };
 	};
-	const foo = generateCardAssortment().rows;
-	let rows: Array<Array<Array<ICard>>> = [...foo];
+	let rows: Array<Array<Array<IPlayCard>>> = generateCardAssortment().rows;
 
-	const reset = () => {
+	const resetSelected = () => {
+		selectedCards.forEach((c) => (c.selected = false));
+		selectedCards = [];
+	};
+
+	const fullReset = () => {
 		const updatedRows = generateCardAssortment().rows;
 		rows = [...updatedRows];
 	};
 
 	const handleCardClick = (
-		card: ICard,
+		card: IPlayCard,
 		row: number,
 		stack: number,
 		index: number
@@ -74,13 +86,45 @@
 		const stackCount = rows[row][stack].length;
 		if (index + 1 === stackCount) {
 			console.log('Is top');
+			card.selected = !card.selected;
+			if (card.selected) {
+				selectedCards.push(card);
+			} else {
+				selectedCards = selectedCards.filter((c) => c.key !== card.key);
+			}
+			// @todo - blur cards behind top one when it gets selected
+			// @todo - can this be optimized with some sort of nested ref instead of updating the *entire* data obj?
+			// @todo - make checkForValidTen async instead of timeout here for selected animation
+			rows = rows;
+			checkForValidTen();
+		}
+	};
+
+	const checkForValidTen = () => {
+		const sum = selectedCards.reduce((running, curr) => {
+			return running + cardValueMap[curr.value];
+		}, 0);
+
+		// Woo!
+		if (sum === 10) {
+			console.log('Yes!');
+		}
+		// If over 10, flash warning and reset cards
+		else if (sum > 10) {
+			console.log('You went over ten 😭');
+			// @TODO - make this whole method async to avoid using timeout and re-assignment
+			// leave time for unselect animation
+			setTimeout(() => {
+				resetSelected();
+				rows = rows;
+			}, 500);
 		}
 	};
 </script>
 
 <main>
 	<div class="row center">
-		<h1 class="xs6">Make Ten</h1>
+		<h1 class="xs6">{appName}</h1>
 	</div>
 	<div class="cardTable">
 		{#each rows as row, rowNum}
@@ -95,6 +139,7 @@
 								<div
 									class="cardWrapper"
 									data-depth={i}
+									data-selected={card.selected || null}
 									style="margin-top: {i ? cardVOffset : 0}px"
 									on:click={() => {
 										handleCardClick(card, rowNum, stackNum, i);
@@ -111,7 +156,7 @@
 		{/each}
 		<CardPlace />
 	</div>
-	<button on:click={reset}>Reset</button>
+	<button on:click={fullReset}>Reset Game</button>
 </main>
 
 <style>
@@ -129,5 +174,13 @@
 	.cardStack {
 		position: relative;
 		width: calc(100% * (1 / 4));
+	}
+	.cardWrapper {
+		transition: all 0.2s linear;
+		/* transform: scale(1); */
+	}
+	.cardWrapper[data-selected] {
+		transform: scale(1.2);
+		box-shadow: 0 0 20px 3px #0ff;
 	}
 </style>
