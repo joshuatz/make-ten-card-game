@@ -265,6 +265,25 @@
 		const topLeftCard = rows[0][0][2];
 	};
 	let stopwatch: Stopwatch;
+
+	const resumeOrStartGame = (forceRestart = false) => {
+		let resumeDelay = 0;
+		if (gameStatus === 'new' || gameStatus === 'complete' || forceRestart) {
+			// Give a little extra time to look at game board
+			resumeDelay = 1000;
+			// Prior game on board - clean up messs
+			if (discardPile.length || gameStatus !== 'new') {
+				fullReset();
+				stopwatch.reset();
+			}
+		}
+
+		gameStatus = 'active';
+		// Give a little extra time to look at game board
+		setTimeout(() => {
+			stopwatch.start();
+		}, resumeDelay);
+	};
 	// @TODO - remove, debugging
 	window['getRows'] = () => {
 		return rows;
@@ -296,20 +315,25 @@
 				<Stopwatch bind:this={stopwatch} />
 			</div>
 			{#if gameStatus === 'active'}
-				<button
-					class="xs2"
-					on:click={() => {
-						gameStatus = 'paused';
-						stopwatch.stop();
-					}}>⏸</button>
+				<div class="xs2 center">
+					<button
+						class="startBtn fancyBtn"
+						on:click={() => {
+							gameStatus = 'paused';
+							stopwatch.stop();
+						}}>⏸</button>
+				</div>
 			{:else if gameStatus === 'paused'}
-				<button
-					class="xs2"
-					on:click={() => {
-						gameStatus = 'active';
-						stopwatch.start();
-					}}>▶</button>
+				<div class="xs2 center">
+					<button
+						class="startBtn fancyBtn"
+						on:click={() => {
+							gameStatus = 'active';
+							stopwatch.start();
+						}}>▶</button>
+				</div>
 			{/if}
+			<div class="xs2 center"><span>Game Status: {gameStatus}</span></div>
 		</div>
 	</div>
 	<div class="overlayWrapper">
@@ -368,30 +392,16 @@
 		</CardPlace>
 		</div>
 		<!-- Main Menu -->
-		<GameOverlay gameDuration={gameDuration} gameStatus={gameStatus} onPlayClick={() => {
-			let resumeDelay = 0;
-			if (gameStatus === 'new' || gameStatus === 'complete') {
-				// Give a little extra time to look at game board
-				resumeDelay = 1000;
-				// Prior game on board - clean up messs
-				if (discardPile.length || gameStatus === 'complete') {
-					fullReset();
-					stopwatch.reset();
-				}
-			}
-
-			gameStatus = 'active';
-			// Give a little extra time to look at game board
-			setTimeout(() => {
-				stopwatch.start();
-			}, resumeDelay);
-		}} />
+		<GameOverlay gameDuration={gameDuration} gameStatus={gameStatus} onResetClick={() => {
+			resumeOrStartGame(true);
+		}} onPlayClick={resumeOrStartGame} />
 	</div>
-	<button on:click={fullReset}>Reset Game</button>
-	<button on:click={test}>Test</button>
 </main>
 
 <style>
+	.startBtn {
+		min-width: 36px;
+	}
 	.overlayWrapper {
 		position: relative;
 	}

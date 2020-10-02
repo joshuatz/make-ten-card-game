@@ -3,6 +3,7 @@
 
 	import Overlay from './Overlay.svelte';
 	export let onPlayClick: () => void = () => {};
+	export let onResetClick: () => void = () => {};
 	export let gameStatus: GameStatus = 'new';
 	export let gameDuration: ITimeInfo;
 
@@ -29,16 +30,27 @@
 					<div class="row center headline">
 						🎉🎈🎉 Congratulations! 🎉🎈🎉
 					</div>
-					<p>
+					<p class="row center">
 						You beat the game in
 						{`${gameDuration.mins} minutes and ${gameDuration.secs} seconds!`}
 					</p>
 				{:else}
-					<div class="xs6 center">Ready to Play?</div>
+					<div class="xs6 center headline">Ready to Play?</div>
 				{/if}
 			</div>
-			<div class="row gameButtons center">
-				<button on:click={onPlayClick}>{getStartGameText()}</button>
+			<div class="row gameButtons">
+				<div class="xs2 center">
+					<button
+						class="fancyBtn startBtn"
+						on:click={onPlayClick}>{getStartGameText()}</button>
+				</div>
+				{#if gameStatus === 'paused'}
+					<div class="xs2 center">
+						<button
+							class="fancyBtn resetBtn"
+							on:click={onResetClick}>{`Reset Game ⚠`}</button>
+					</div>
+				{/if}
 			</div>
 			<div class="row aboutSection">
 				<p>
@@ -69,5 +81,21 @@
 	}
 	.headline {
 		font-size: 2rem;
+		padding: 10px 0px;
+	}
+	.gameButtons {
+		justify-content: center;
+		margin: 10px 0px;
+	}
+	.gameButtons button {
+		font-size: 1.5rem;
+	}
+	.startBtn {
+		background-color: #4caf50;
+		color: #1f1414;
+	}
+	.resetBtn {
+		background-color: #f44336;
+		color: white;
 	}
 </style>
