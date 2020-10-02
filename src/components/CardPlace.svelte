@@ -8,7 +8,7 @@
 <div
 	class={spaceJoin(['outer', classStr])}
 	style="width:{maxCardWidth}px; height:{maxCardHeight}px;">
-	<div class="inner">
+	<div class="inner" on:click>
 		<slot />
 	</div>
 </div>
