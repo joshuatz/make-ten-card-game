@@ -70,9 +70,18 @@ button:focus {
 */
 .center {
 	text-align: center;
+	justify-content: center;
 }
-
-
+.vCenter {
+	align-items: center;
+}
+.fullAbsolute {
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	top: 0;
+	left: 0;
+}
 
 /**
 * Responsive Design
@@ -83,6 +92,7 @@ button:focus {
 .row {
 	display: flex;
 	flex-wrap: wrap;
+	width: 100%;
 }
 /** Break Points */
 /** xs (< 600px) */

@@ -36,3 +36,26 @@ export const spaceJoin = (array: any[]): string => {
 		.filter((x) => x !== '')
 		.join(' ');
 };
+
+// https://cheatsheets.joshuatz.com/snippets/js/
+export const msToParts = (e: number) => {
+	return {
+		days: Math.floor(e / 864e5),
+		hrs: Math.floor((e % 864e5) / 36e5),
+		mins: Math.floor(((e % 864e5) % 36e5) / 6e4),
+		secs: Math.floor((((e % 864e5) % 36e5) % 6e4) / 1e3),
+		ms: Math.floor((((e % 864e5) % 36e5) % 6e4) % 1e3),
+	};
+};
+
+export const leftPad = (
+	input: number | string,
+	length: number,
+	padWith: string
+) => {
+	let out = input.toString();
+	while (out.length < length) {
+		out = padWith + out;
+	}
+	return out;
+};

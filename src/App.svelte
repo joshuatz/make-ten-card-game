@@ -13,8 +13,12 @@
 		NotificationDisplay,
 		notifier,
 	} from '@beyonk/svelte-notifications';
-	import { crossfade } from 'svelte/transition';
+	import { crossfade, fly } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
+	import Stopwatch from './components/Stopwatch.svelte';
+	import { onMount } from 'svelte';
+	import GameOverlay from './components/GameOverlay.svelte';
+	import Overlay from './components/Overlay.svelte';
 
 	const stackSize = 3;
 
@@ -51,6 +55,12 @@
 	const rowHeight = maxCardHeight + ((maxCardHeight - Math.abs(cardVOffset)) * stackSize);
 
 	// State stuff
+	let gameStatus: GameStatus = 'new';
+	let gameDuration: ITimeInfo = {
+		ms: 0,
+		secs: 0,
+		mins: 0,
+	};
 	let discardPile: IPlayCard[] = [];
 	let selectedCards: Array<IPlayCardWithPos> = [];
 
@@ -145,6 +155,8 @@
 	};
 
 	const fullReset = () => {
+		selectedCards = [];
+		discardPile = [];
 		const updatedRows = generateCardAssortment().rows;
 		rows = [...updatedRows];
 	};
@@ -209,6 +221,7 @@
 			// @todo - make checkForValidTen async instead of timeout here for selected animation
 			rows = rows;
 			checkForValidTen();
+			checkForGameComplete();
 		}
 	};
 
@@ -235,9 +248,23 @@
 			}, 500);
 		}
 	};
+
+	const checkForGameComplete = () => {
+		if (!rows.flat(2).length) {
+			// @TODO - make fancy success popup
+			notifier.success(`You won!!! 🎉🎈🎉🎈`);
+			stopwatch.stop();
+			gameDuration = stopwatch.getElapsedInfo();
+			setTimeout(() => {
+				gameStatus = 'complete';
+			}, toastDelayMs);
+		}
+	};
+
 	const test = () => {
 		const topLeftCard = rows[0][0][2];
 	};
+	let stopwatch: Stopwatch;
 	// @TODO - remove, debugging
 	window['getRows'] = () => {
 		return rows;
@@ -245,51 +272,85 @@
 	window['forceUpdate'] = () => {
 		rows = rows;
 	};
+	window['simulateEvents'] = {
+		winGame: () => {
+			gameStatus = 'active';
+			// move all cards to discard
+			discardPile = rows.flat(2);
+			rows = [];
+			checkForGameComplete();
+		},
+	};
+
+	onMount(() => {
+		window['stopwatch'] = stopwatch;
+	});
 </script>
 
 <main>
 	<NotificationDisplay timeout={toastDelayMs} />
-	<div class="row center">
-		<h1 class="xs6">{appName}</h1>
-	</div>
-	<div class="cardTable">
-		{#each rows as row, rowNum}
-			<div
-				class="row cardRow"
-				style="min-height:{rowHeight}px;"
-				data-renderedat={new Date().getTime()}>
-				{#each row as stack, stackNum}
-					<div class="cardStack center">
-						<CardPlace
-							on:click={() => {
-								console.log(`empty card place clicked!`);
-								handleEmptyPlaceClick(rowNum, stackNum);
-							}}>
-							{#each stack as card, i (card.key)}
-								<div
-									in:receive={{ key: card.key }}
-									out:send={{ key: card.key }}
-									class="cardWrapper"
-									data-depth={i}
-									data-selected={card.selected || null}
-									style="margin-top: {i ? cardVOffset : 0}px"
-									on:click={(evt) => {
-										handleCardClick(evt, card, rowNum, stackNum, i);
-									}}>
-									<Card
-										class="flex"
-										suite={card.suite}
-										value={card.value} />
-								</div>
-							{/each}
-						</CardPlace>
-					</div>
-				{/each}
+	<div class="row">
+		<h1 class="xs6 sm3 center">{appName}</h1>
+		<div class="row vCenter xs6 sm3">
+			<div class="xs2">
+				<Stopwatch bind:this={stopwatch} />
 			</div>
-		{/each}
+			{#if gameStatus === 'active'}
+				<button
+					class="xs2"
+					on:click={() => {
+						gameStatus = 'paused';
+						stopwatch.stop();
+					}}>⏸</button>
+			{:else if gameStatus === 'paused'}
+				<button
+					class="xs2"
+					on:click={() => {
+						gameStatus = 'active';
+						stopwatch.start();
+					}}>▶</button>
+			{/if}
+		</div>
+	</div>
+	<div class="overlayWrapper">
+		<div class="cardTable">
+			{#each rows as row, rowNum}
+				<div
+					class="row cardRow"
+					style="min-height:{rowHeight}px;"
+					data-renderedat={new Date().getTime()}>
+					{#each row as stack, stackNum}
+						<div class="cardStack center">
+							<CardPlace
+								on:click={() => {
+									console.log(`empty card place clicked!`);
+									handleEmptyPlaceClick(rowNum, stackNum);
+								}}>
+								{#each stack as card, i (card.key)}
+									<div
+										in:receive={{ key: card.key }}
+										out:send={{ key: card.key }}
+										class="cardWrapper"
+										data-depth={i}
+										data-selected={card.selected || null}
+										style="margin-top: {i ? cardVOffset : 0}px"
+										on:click={(evt) => {
+											handleCardClick(evt, card, rowNum, stackNum, i);
+										}}>
+										<Card
+											class="flex"
+											suite={card.suite}
+											value={card.value} />
+									</div>
+								{/each}
+							</CardPlace>
+						</div>
+					{/each}
+				</div>
+			{/each}
 
-		<!-- Discard Pile -->
-		<CardPlace>
+			<!-- Discard Pile -->
+			<CardPlace>
 			{#each discardPile as dCard, i (dCard.key)}
 				<div
 					in:receive={{ key: dCard.key }}
@@ -305,12 +366,35 @@
 				</div>
 			{/each}
 		</CardPlace>
+		</div>
+		<!-- Main Menu -->
+		<GameOverlay gameDuration={gameDuration} gameStatus={gameStatus} onPlayClick={() => {
+			let resumeDelay = 0;
+			if (gameStatus === 'new' || gameStatus === 'complete') {
+				// Give a little extra time to look at game board
+				resumeDelay = 1000;
+				// Prior game on board - clean up messs
+				if (discardPile.length || gameStatus === 'complete') {
+					fullReset();
+					stopwatch.reset();
+				}
+			}
+
+			gameStatus = 'active';
+			// Give a little extra time to look at game board
+			setTimeout(() => {
+				stopwatch.start();
+			}, resumeDelay);
+		}} />
 	</div>
 	<button on:click={fullReset}>Reset Game</button>
 	<button on:click={test}>Test</button>
 </main>
 
 <style>
+	.overlayWrapper {
+		position: relative;
+	}
 	.cardTable {
 		min-height: 500px;
 		width: 100%;
@@ -318,11 +402,13 @@
 		background-repeat: repeat;
 		border: 4px solid black;
 		border-radius: 10px;
+		box-sizing: border-box;
 	}
 	.cardRow {
-		margin: 10px 0px;
+		margin-top: 8px;
 	}
 	.cardStack {
+		display: flex;
 		position: relative;
 		width: calc(100% * (1 / 4));
 	}

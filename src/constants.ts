@@ -24,3 +24,5 @@ export const cardValueMap: Record<CardValue, number> = {
 
 // Some config stuff
 export const toastDelayMs = 3 * 1000;
+export const APP_NAME = 'Make Ten Game';
+export const REPO_URL = '';
