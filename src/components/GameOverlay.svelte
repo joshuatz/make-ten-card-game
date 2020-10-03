@@ -62,13 +62,29 @@
 				<p class="row center">
 					Keep going until all the cards are in the discard pile!
 				</p>
-				<p class="row">
-					Built by&nbsp;
-					<a
-						href="https://joshuatz.com/?utm_source=make-ten-game"
-						rel="noopener"
-						target="_blank">Joshua Tzucker</a>.
-				</p>
+				<!-- Meta info / Acknowledgements -->
+				<div class="row">
+					<div class="xs6 sm3">
+						<p class="row">
+							Built by
+							<a
+								href="https://joshuatz.com/?utm_source=make-ten-game"
+								rel="noopener"
+								target="_blank">Joshua Tzucker</a>
+							💻.
+						</p>
+						<p class="row">
+							<a
+								href="https://github.com/joshuatz/make-ten-card-game"
+								rel="noopener"
+								target="_blank">Open source 💾.</a>
+						</p>
+					</div>
+					<div class="xs6 sm3">
+						<p>Card patterns provided CC0 by <a href="https://www.me.uk/cards/" rel="noopener" target="_blank">me.uk/cards</a></p>
+						<p>Felt pattern courtesy of <a href="https://www.toptal.com/designers/subtlepatterns/" rel="noopener" target="_blank">Toptal Subtle Patterns</a>.</p>
+					</div>
+				</div>
 			</div>
 		</Overlay>
 	</div>
@@ -99,5 +115,8 @@
 	.resetBtn {
 		background-color: #f44336;
 		color: white;
+	}
+	p {
+		display: block;
 	}
 </style>

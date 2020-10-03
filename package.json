@@ -1,7 +1,21 @@
 {
-  "name": "make-ten-game",
-  "displayName": "Make Ten Game",
+  "name": "make-ten-card-game",
+  "displayName": "Make Ten Card Game",
   "version": "1.0.0",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joshuatz/make-ten-card-game.git"
+  },
+  "bugs": {
+    "url": "https://github.com/joshuatz/make-ten-card-game/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Joshua Tzucker",
+    "url": "https://joshuatz.com/?utm_source=make-ten-game-package"
+  },
+  "homepage": "https://github.com/joshuatz/make-ten-card-game",
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",

@@ -18,7 +18,6 @@
 	import Stopwatch from './components/Stopwatch.svelte';
 	import { onMount } from 'svelte';
 	import GameOverlay from './components/GameOverlay.svelte';
-	import Overlay from './components/Overlay.svelte';
 
 	const stackSize = 3;
 
@@ -316,7 +315,7 @@
 	<div class="row">
 		<h1 class="xs6 sm3 center">{appName}</h1>
 		<div class="row vCenter xs6 sm3">
-			<div class="xs2">
+			<div class="xs2" style="min-width: 126px;">
 				<Stopwatch bind:this={stopwatch} />
 			</div>
 			{#if gameStatus === 'active'}

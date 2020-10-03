@@ -63,7 +63,9 @@
 <style>
 	.stopwatch {
 		border: 2px double black;
-		padding: 0px 2px 1px 2px;
+		padding: 2px 8px;
+		display: inline-block;
+		font-size: 2rem;
 	}
 	.stopwatch > div {
 		display: inline-block;
