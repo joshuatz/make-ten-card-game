@@ -1,6 +1,7 @@
 <script lang="ts">
+	import { maxCardHeight, maxCardWidth } from '../constants';
 	import { spaceJoin } from '../utils';
-	import { maxCardWidth, maxCardHeight } from '../constants';
+
 	let classStr = '';
 	export { classStr as class };
 </script>

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
-
 	import Overlay from './Overlay.svelte';
+
 	export let onPlayClick: () => void = () => {};
 	export let onResetClick: () => void = () => {};
 	export let gameStatus: GameStatus = 'new';

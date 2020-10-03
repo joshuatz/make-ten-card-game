@@ -1,3 +1,6 @@
+/**
+ * @file Ambient declarations for @beyonk/svelte-notifications, which does not emit types
+ */
 declare module '@beyonk/svelte-notifications' {
 	type NotifyFunc = (msg: string, timeout?: number) => void;
 	type Notifier = {

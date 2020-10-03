@@ -1,23 +1,22 @@
 <script lang="ts">
 	export let appName: string;
 	import {
-		cardVOffset,
-		maxCardHeight,
-		cardValueMap,
-		toastDelayMs,
-	} from './constants';
-	import { chunkArr, shuffleArr } from './utils/index';
-	import Card from './components/Card.svelte';
-	import CardPlace from './components/CardPlace.svelte';
-	import {
 		NotificationDisplay,
 		notifier,
 	} from '@beyonk/svelte-notifications';
-	import { crossfade, fly } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
-	import Stopwatch from './components/Stopwatch.svelte';
-	import { onMount } from 'svelte';
+	import { crossfade } from 'svelte/transition';
+	import Card from './components/Card.svelte';
+	import CardPlace from './components/CardPlace.svelte';
 	import GameOverlay from './components/GameOverlay.svelte';
+	import Stopwatch from './components/Stopwatch.svelte';
+	import {
+		cardValueMap,
+		cardVOffset,
+		maxCardHeight,
+		toastDelayMs,
+	} from './constants';
+	import { chunkArr, delay, shuffleArr } from './utils/index';
 
 	const stackSize = 3;
 
@@ -54,6 +53,7 @@
 	const rowHeight = maxCardHeight + ((maxCardHeight - Math.abs(cardVOffset)) * stackSize);
 
 	// State stuff
+	let stopwatch: Stopwatch;
 	let gameStatus: GameStatus = 'new';
 	let gameDuration: ITimeInfo = {
 		ms: 0,
@@ -99,7 +99,6 @@
 		const stacks: Array<Array<IPlayCard>> = chunkArr(cards, 3);
 		// Group by rows of three
 		const rows: Array<Array<Array<IPlayCard>>> = chunkArr(stacks, 4);
-		console.log(rows);
 		return { stacks, rows, cards };
 	};
 	let rows: Array<Array<Array<IPlayCard>>> = generateCardAssortment().rows;
@@ -183,25 +182,19 @@
 		}
 	};
 
-	const handleCardClick = (
+	const handleCardClick = async (
 		evt: MouseEvent,
 		card: IPlayCard,
 		row: number,
 		stack: number,
 		index: number
 	) => {
-		console.log({
-			card,
-			row,
-			stack,
-			index,
-		});
 		// Stop propagation; we don't want it reaching the empty placeholder
 		evt.stopImmediatePropagation();
+
 		// Only handle clicks on "top" cards
 		const stackCount = rows[row][stack].length;
 		if (index + 1 === stackCount) {
-			console.log('Is top');
 			card.selected = !card.selected;
 			if (card.selected) {
 				selectedCards.push({
@@ -216,15 +209,15 @@
 				);
 			}
 			// @todo - blur cards behind top one when it gets selected
-			// @todo - can this be optimized with some sort of nested ref instead of updating the *entire* data obj?
-			// @todo - make checkForValidTen async instead of timeout here for selected animation
 			rows = rows;
-			checkForValidTen();
+			// Leave time for selected animation triggered by above
+			await delay(500);
+			await checkForValidTen();
 			checkForGameComplete();
 		}
 	};
 
-	const checkForValidTen = () => {
+	const checkForValidTen = async () => {
 		const parts = selectedCards.map((c) => cardValueMap[c.card.value]);
 		const sum = parts.reduce((running, curr) => {
 			return running + curr;
@@ -237,42 +230,36 @@
 			notifier.success(`${equationStr}. Great job! 🙌`);
 			// Move over to discard pile
 			discardCards(selectedCards.map((s) => s.card));
+			return;
 		}
 		// If over 10, flash warning and reset cards
 		else if (sum > 10) {
-			// @TODO - make this whole method async to avoid using timeout and re-assignment
-			// leave time for unselect animation
 			notifier.warning(`${equationStr}. Not 10 😭`);
-			setTimeout(() => {
-				resetSelected();
-				rows = rows;
-			}, 500);
+			// leave time for unselect animation
+			resetSelected();
+			rows = rows;
+			return;
 		}
 	};
 
 	const checkForGameComplete = () => {
 		if (!rows.flat(2).length) {
-			// @TODO - make fancy success popup
 			notifier.success(`You won!!! 🎉🎈🎉🎈`);
 			stopwatch.stop();
 			gameDuration = stopwatch.getElapsedInfo();
 			setTimeout(() => {
+				// This will trigger success popup / game menu
 				gameStatus = 'complete';
 			}, toastDelayMs);
 		}
 	};
-
-	const test = () => {
-		const topLeftCard = rows[0][0][2];
-	};
-	let stopwatch: Stopwatch;
 
 	const resumeOrStartGame = (forceRestart: boolean = false) => {
 		let resumeDelay = 0;
 		if (gameStatus === 'new' || gameStatus === 'complete' || forceRestart) {
 			// Give a little extra time to look at game board
 			resumeDelay = 1000;
-			// Prior game on board - clean up messs
+			// Prior game on board - clean up mess
 			if (discardPile.length || gameStatus !== 'new') {
 				fullReset();
 				stopwatch.reset();
@@ -285,29 +272,6 @@
 			stopwatch.start();
 		}, resumeDelay);
 	};
-	// @TODO - remove, debugging
-	window['testObjs'] = {
-		simulate: {
-			winGame: () => {
-				gameStatus = 'active';
-				// move all cards to discard
-				discardPile = rows.flat(2);
-				rows = [];
-				checkForGameComplete();
-			},
-		},
-		forceUpdate: () => {
-			rows = rows;
-		},
-		getRows: () => {
-			return rows;
-		},
-		notifier,
-	};
-
-	onMount(() => {
-		window['stopwatch'] = stopwatch;
-	});
 </script>
 
 <main>
@@ -321,6 +285,7 @@
 			{#if gameStatus === 'active'}
 				<div class="xs2 center">
 					<button
+						title="Pause Game"
 						class="startBtn fancyBtn"
 						on:click={() => {
 							gameStatus = 'paused';
@@ -330,6 +295,7 @@
 			{:else if gameStatus === 'paused'}
 				<div class="xs2 center">
 					<button
+						title="Resume Game"
 						class="startBtn fancyBtn"
 						on:click={() => {
 							gameStatus = 'active';
@@ -351,7 +317,6 @@
 						<div class="cardStack center">
 							<CardPlace
 								on:click={() => {
-									console.log(`empty card place clicked!`);
 									handleEmptyPlaceClick(rowNum, stackNum);
 								}}>
 								{#each stack as card, i (card.key)}

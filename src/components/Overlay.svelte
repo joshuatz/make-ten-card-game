@@ -1,6 +1,7 @@
 <!-- REMINDER: Overlay parent should have `position: relative;` -->
 <script lang="ts">
 	import { spaceJoin } from '../utils';
+
 	let classStr = '';
 	export { classStr as class };
 	export let visible: boolean = true;

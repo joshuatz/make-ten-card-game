@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { maxCardWidth } from '../constants';
 	import { spaceJoin } from '../utils';
+
 	export let suite: CardSuite = 'hearts';
 	export let value: CardValue = 'A';
 	let classStr = '';

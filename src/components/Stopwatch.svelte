@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { leftPad, msToParts } from '../utils';
+
 	export let pollingMs = 50;
 	export let onTimeUpdate: (info: ITimeInfo) => void = () => {};
 	let isRunning = false;
@@ -31,11 +32,13 @@
 			timerHandle = setInterval(handleUpdate, pollingMs);
 		}
 	};
+
 	export const reset = () => {
 		stop();
 		accumTimeMs = 0;
 		handleUpdate();
 	};
+
 	export const stop = () => {
 		if (isRunning) {
 			clearInterval(timerHandle);
