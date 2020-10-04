@@ -6,6 +6,7 @@
 	} from '@beyonk/svelte-notifications';
 	import { quintOut } from 'svelte/easing';
 	import { crossfade } from 'svelte/transition';
+	import Analytics from './components/Analytics.svelte';
 	import Card from './components/Card.svelte';
 	import CardPlace from './components/CardPlace.svelte';
 	import GameOverlay from './components/GameOverlay.svelte';
@@ -303,6 +304,7 @@
 </script>
 
 <main>
+	<Analytics />
 	<NotificationDisplay timeout={toastDelayMs} />
 	<div class="row">
 		<h1 class="xs6 sm3 md2 center">{appName}</h1>
