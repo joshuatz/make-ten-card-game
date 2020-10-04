@@ -7,7 +7,7 @@
 </script>
 
 <div
-	class={spaceJoin(['outer', classStr])}
+	class={spaceJoin(['outer', 'unselectable', classStr])}
 	style="width:{maxCardWidth}px; height:{maxCardHeight}px;">
 	<div class="inner" on:click>
 		<slot />

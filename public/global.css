@@ -111,6 +111,12 @@ ul.toasts .toast .content {
 	top: 0;
 	left: 0;
 }
+.unselectable {
+	-moz-user-select: none;
+	-webkit-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
 
 /**
 * Responsive Design
