@@ -6,6 +6,7 @@
 	export let onResetClick: () => void = () => {};
 	export let gameStatus: GameStatus = 'new';
 	export let gameDuration: ITimeInfo;
+	export let hidden = false;
 
 	const getStartGameText = () => {
 		let startGameText = `Start Game 🃏`;
@@ -22,7 +23,7 @@
 	};
 </script>
 
-{#if gameStatus !== 'active'}
+{#if gameStatus !== 'active' && !hidden}
 	<div class="fullAbsolute" transition:fly={{ duration: 1000, y: -200 }}>
 		<Overlay>
 			<div class="row">

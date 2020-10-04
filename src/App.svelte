@@ -9,6 +9,8 @@
 	import Card from './components/Card.svelte';
 	import CardPlace from './components/CardPlace.svelte';
 	import GameOverlay from './components/GameOverlay.svelte';
+	import Modal from './components/Modal.svelte';
+	import Settings from './components/Settings.svelte';
 	import Stopwatch from './components/Stopwatch.svelte';
 	import {
 		cardValueMap,
@@ -16,6 +18,7 @@
 		maxCardHeight,
 		toastDelayMs,
 	} from './constants';
+	import { allowCombosGreaterThanTwo } from './store';
 	import { chunkArr, delay, shuffleArr } from './utils/index';
 
 	const stackSize = 3;
@@ -62,6 +65,7 @@
 	};
 	let discardPile: IPlayCard[] = [];
 	let selectedCards: Array<IPlayCardWithPos> = [];
+	let settingsMenuIsOpen = false;
 
 	const generateCardAssortment = () => {
 		// generate card grid data
@@ -212,12 +216,12 @@
 			rows = rows;
 			// Leave time for selected animation triggered by above
 			await delay(500);
-			await checkForValidTen();
+			await checkForValidCombo();
 			checkForGameComplete();
 		}
 	};
 
-	const checkForValidTen = async () => {
+	const checkForValidCombo = async () => {
 		const parts = selectedCards.map((c) => cardValueMap[c.card.value]);
 		const sum = parts.reduce((running, curr) => {
 			return running + curr;
@@ -234,7 +238,17 @@
 		}
 		// If over 10, flash warning and reset cards
 		else if (sum > 10) {
-			notifier.warning(`${equationStr}. Not 10 😭`);
+			notifier.warning(`${equationStr}. Over 10 😭`);
+			// leave time for unselect animation
+			resetSelected();
+			rows = rows;
+			return;
+		}
+		// If under 10, and 2 cards are already selected with max cards = 2
+		else if (!$allowCombosGreaterThanTwo && parts.length >= 2) {
+			notifier.warning(
+				`${equationStr}. Under 10, and only two cards allowed 😭`
+			);
 			// leave time for unselect animation
 			resetSelected();
 			rows = rows;
@@ -251,6 +265,20 @@
 				// This will trigger success popup / game menu
 				gameStatus = 'complete';
 			}, toastDelayMs);
+		}
+	};
+
+	const resumeGame = () => {
+		if (gameStatus === 'paused') {
+			gameStatus = 'active';
+			stopwatch.start();
+		}
+	};
+
+	const pauseGame = () => {
+		if (gameStatus === 'active') {
+			gameStatus = 'paused';
+			stopwatch.stop();
 		}
 	};
 
@@ -277,32 +305,31 @@
 <main>
 	<NotificationDisplay timeout={toastDelayMs} />
 	<div class="row">
-		<h1 class="xs6 sm3 center">{appName}</h1>
-		<div class="row vCenter xs6 sm3">
+		<h1 class="xs6 sm3 md2 center">{appName}</h1>
+		<div class="row vCenter xs6 sm3 md4">
 			<div class="xs2" style="min-width: 126px;">
 				<Stopwatch bind:this={stopwatch} />
 			</div>
-			{#if gameStatus === 'active'}
-				<div class="xs2 center">
+			<div class="xs1 center">
+				{#if gameStatus === 'active'}
 					<button
 						title="Pause Game"
-						class="startBtn fancyBtn"
-						on:click={() => {
-							gameStatus = 'paused';
-							stopwatch.stop();
-						}}>⏸</button>
-				</div>
-			{:else if gameStatus === 'paused'}
-				<div class="xs2 center">
+						class="menuButton fancyBtn"
+						on:click={pauseGame}>⏸</button>
+				{:else if gameStatus === 'paused'}
 					<button
 						title="Resume Game"
-						class="startBtn fancyBtn"
-						on:click={() => {
-							gameStatus = 'active';
-							stopwatch.start();
-						}}>▶</button>
-				</div>
-			{/if}
+						class="menuButton fancyBtn"
+						on:click={resumeGame}>▶</button>
+				{/if}
+			</div>
+			<!-- Settings button -->
+			<div class="xs1 center">
+				<button class="fancyBtn menuButton" title="Open settings menu" on:click={() => {
+					settingsMenuIsOpen = true;
+					pauseGame();
+				}}>⚙</button>
+			</div>
 			<div class="xs2 center"><span>Game Status: {gameStatus}</span></div>
 		</div>
 	</div>
@@ -361,16 +388,23 @@
 		</CardPlace>
 		</div>
 		<!-- Main Menu -->
-		<GameOverlay gameDuration={gameDuration} gameStatus={gameStatus} onResetClick={() => {
+		<GameOverlay hidden={gameStatus === 'paused' && settingsMenuIsOpen} gameDuration={gameDuration} gameStatus={gameStatus} onResetClick={() => {
 			resumeOrStartGame(true);
 		}} onPlayClick={() => {
 			resumeOrStartGame(false);
 		}} />
+		<!-- Setting Menu -->
+		<Modal open={settingsMenuIsOpen} onClose={() => {
+			settingsMenuIsOpen = false;
+			resumeGame();
+		}}>
+			<Settings />
+		</Modal>
 	</div>
 </main>
 
 <style>
-	.startBtn {
+	.menuButton {
 		min-width: 36px;
 	}
 	.overlayWrapper {
