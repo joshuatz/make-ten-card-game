@@ -85,3 +85,57 @@ export const getRandomInt = (min: number, max: number) => {
 	max = Math.floor(max);
 	return Math.floor(Math.random() * (max - min)) + min;
 };
+
+export const generateCardAssortment = () => {
+	// generate card grid data
+	const suites: Array<CardSuite> = ['diamonds', 'clubs', 'hearts', 'spades'];
+	const indexes: Array<CardValue> = [
+		'A',
+		'2',
+		'3',
+		'4',
+		'5',
+		'6',
+		'7',
+		'8',
+		'9',
+	];
+	const cards: IPlayCard[] = [];
+	suites.forEach((s) => {
+		indexes.forEach((i) => {
+			cards.push({
+				key: `${i}${s}`,
+				value: i,
+				suite: s,
+			});
+		});
+	});
+
+	// Shuffle cards and split into 3 x 4 (12 stacks of 3)
+	shuffleArr(cards);
+	// Split by into stacks of 3
+	const stacks: Array<Array<IPlayCard>> = chunkArr(cards, 3);
+	// Group by rows of three
+	const rows: Array<Array<Array<IPlayCard>>> = chunkArr(stacks, 4);
+	return { stacks, rows, cards };
+};
+
+export const getCardByKey = (key: string, rows: IPlayCard[][][]) => {
+	for (let r = 0; r < rows.length; r++) {
+		const row = rows[r];
+		for (let s = 0; s < row.length; s++) {
+			const stack = row[s];
+			for (let i = 0; i < stack.length; i++) {
+				const card = stack[i];
+				if (card.key === key) {
+					return {
+						card,
+						row: r,
+						stack: s,
+						index: i,
+					};
+				}
+			}
+		}
+	}
+};

@@ -117,6 +117,9 @@ ul.toasts .toast .content {
 	-ms-user-select: none;
 	user-select: none;
 }
+.draggable {
+	cursor: move;
+}
 
 /**
 * Responsive Design

@@ -20,7 +20,7 @@
 		toastDelayMs,
 	} from './constants';
 	import { allowCombosGreaterThanTwo } from './store';
-	import { chunkArr, delay, shuffleArr } from './utils/index';
+	import { delay, generateCardAssortment } from './utils/index';
 
 	const stackSize = 3;
 
@@ -41,18 +41,6 @@
 		},
 	});
 
-	interface IPlayCard extends ICard {
-		key: string;
-		selected?: boolean;
-	}
-
-	interface IPlayCardWithPos {
-		card: IPlayCard;
-		row: number;
-		stack: number;
-		index: number;
-	}
-
 	// prettier-ignore
 	const rowHeight = maxCardHeight + ((maxCardHeight - Math.abs(cardVOffset)) * stackSize);
 
@@ -67,70 +55,13 @@
 	let discardPile: IPlayCard[] = [];
 	let selectedCards: Array<IPlayCardWithPos> = [];
 	let settingsMenuIsOpen = false;
+	let comboCheckInProgress = false;
 
-	const generateCardAssortment = () => {
-		// generate card grid data
-		const suites: Array<CardSuite> = [
-			'diamonds',
-			'clubs',
-			'hearts',
-			'spades',
-		];
-		const indexes: Array<CardValue> = [
-			'A',
-			'2',
-			'3',
-			'4',
-			'5',
-			'6',
-			'7',
-			'8',
-			'9',
-		];
-		const cards: IPlayCard[] = [];
-		suites.forEach((s) => {
-			indexes.forEach((i) => {
-				cards.push({
-					key: `${i}${s}`,
-					value: i,
-					suite: s,
-				});
-			});
-		});
-
-		// Shuffle cards and split into 3 x 4 (12 stacks of 3)
-		shuffleArr(cards);
-		// Split by into stacks of 3
-		const stacks: Array<Array<IPlayCard>> = chunkArr(cards, 3);
-		// Group by rows of three
-		const rows: Array<Array<Array<IPlayCard>>> = chunkArr(stacks, 4);
-		return { stacks, rows, cards };
-	};
 	let rows: Array<Array<Array<IPlayCard>>> = generateCardAssortment().rows;
 
 	const resetSelected = () => {
 		selectedCards.forEach((c) => (c.card.selected = false));
 		selectedCards = [];
-	};
-
-	const getCardByKey = (key: string): IPlayCardWithPos => {
-		for (let r = 0; r < rows.length; r++) {
-			const row = rows[r];
-			for (let s = 0; s < row.length; s++) {
-				const stack = row[s];
-				for (let i = 0; i < stack.length; i++) {
-					const card = stack[i];
-					if (card.key === key) {
-						return {
-							card,
-							row: r,
-							stack: s,
-							index: i,
-						};
-					}
-				}
-			}
-		}
 	};
 
 	const discardCards = (cards: IPlayCard[]) => {
@@ -187,38 +118,72 @@
 		}
 	};
 
-	const handleCardClick = async (
-		evt: MouseEvent,
-		card: IPlayCard,
-		row: number,
-		stack: number,
+	const getIsCardOnTop = (
+		rowNum: number,
+		stackNum: number,
 		index: number
 	) => {
+		const stackCount = rows[rowNum][stackNum].length;
+		return index + 1 === stackCount;
+	};
+
+	const unselectCard = (card: IPlayCard) => {
+		if (card.selected) {
+			card.selected = false;
+			// Can unselect by key, since single deck of cards
+			selectedCards = selectedCards.filter(
+				(c) => c.card.key !== card.key
+			);
+			// Force update of state
+			rows = rows;
+		}
+	};
+
+	const handleCardClick = async ({
+		card,
+		rowNum,
+		stackNum,
+		index,
+		unselectIfAlreadySelected,
+		evt,
+	}: {
+		card: IPlayCard;
+		rowNum: number;
+		stackNum: number;
+		index: number;
+		unselectIfAlreadySelected?: boolean;
+		evt?: MouseEvent;
+	}) => {
 		// Stop propagation; we don't want it reaching the empty placeholder
-		evt.stopImmediatePropagation();
+		if (evt) {
+			evt.stopImmediatePropagation();
+		}
 
 		// Only handle clicks on "top" cards
-		const stackCount = rows[row][stack].length;
-		if (index + 1 === stackCount) {
-			card.selected = !card.selected;
-			if (card.selected) {
+		if (getIsCardOnTop(rowNum, stackNum, index)) {
+			comboCheckInProgress = true;
+
+			if (!card.selected) {
+				card.selected = true;
 				selectedCards.push({
 					card,
-					row,
-					stack,
+					row: rowNum,
+					stack: stackNum,
 					index,
 				});
 			} else {
-				selectedCards = selectedCards.filter(
-					(c) => c.card.key !== card.key
-				);
+				// Unselect card
+				if (unselectIfAlreadySelected) {
+					unselectCard(card);
+				}
 			}
-			// @todo - blur cards behind top one when it gets selected
 			rows = rows;
 			// Leave time for selected animation triggered by above
 			await delay(500);
 			await checkForValidCombo();
 			checkForGameComplete();
+
+			comboCheckInProgress = false;
 		}
 	};
 
@@ -317,20 +282,26 @@
 					<button
 						title="Pause Game"
 						class="menuButton fancyBtn"
-						on:click={pauseGame}>⏸</button>
+						on:click={pauseGame}>⏸</button
+					>
 				{:else if gameStatus === 'paused'}
 					<button
 						title="Resume Game"
 						class="menuButton fancyBtn"
-						on:click={resumeGame}>▶</button>
+						on:click={resumeGame}>▶</button
+					>
 				{/if}
 			</div>
 			<!-- Settings button -->
 			<div class="xs1 center">
-				<button class="fancyBtn menuButton" title="Open settings menu" on:click={() => {
-					settingsMenuIsOpen = true;
-					pauseGame();
-				}}>⚙</button>
+				<button
+					class="fancyBtn menuButton"
+					title="Open settings menu"
+					on:click={() => {
+						settingsMenuIsOpen = true;
+						pauseGame();
+					}}>⚙</button
+				>
 			</div>
 			<div class="xs2 center"><span>Game Status: {gameStatus}</span></div>
 		</div>
@@ -341,28 +312,84 @@
 				<div
 					class="row cardRow"
 					style="min-height:{rowHeight}px;"
-					data-renderedat={new Date().getTime()}>
+					data-renderedat={new Date().getTime()}
+				>
 					{#each row as stack, stackNum}
 						<div class="cardStack center">
 							<CardPlace
+								on:dragover={(evt) => evt.preventDefault()}
+								on:dragenter={(evt) => evt.preventDefault()}
+								on:drop={(evt) => {
+									evt.stopPropagation();
+									comboCheckInProgress = true;
+									handleEmptyPlaceClick(rowNum, stackNum);
+									comboCheckInProgress = false;
+								}}
 								on:click={() => {
 									handleEmptyPlaceClick(rowNum, stackNum);
-								}}>
-								{#each stack as card, i (card.key)}
+								}}
+							>
+								{#each stack as card, index (card.key)}
 									<div
+										draggable="true"
 										in:receive={{ key: card.key }}
 										out:send={{ key: card.key }}
-										class="cardWrapper"
-										data-depth={i}
+										class="cardWrapper draggable"
+										data-depth={index}
 										data-selected={card.selected || null}
-										style="margin-top: {i ? cardVOffset : 0}px"
+										data-key={card.key}
+										style="margin-top: {index
+											? cardVOffset
+											: 0}px"
+										on:dragover={(evt) =>
+											evt.preventDefault()}
+										on:dragenter={(evt) =>
+											evt.preventDefault()}
+										on:drop={(evt) => {
+											handleCardClick({
+												card,
+												rowNum,
+												stackNum,
+												index,
+												unselectIfAlreadySelected: false,
+												evt,
+											});
+										}}
+										on:dragstart={(evt) => {
+											evt.dataTransfer.effectAllowed =
+												'move';
+											handleCardClick({
+												card,
+												rowNum,
+												stackNum,
+												index,
+												unselectIfAlreadySelected: false,
+												evt,
+											});
+										}}
+										on:dragend={(evt) => {
+											setTimeout(() => {
+												if (!comboCheckInProgress) {
+													unselectCard(card);
+												}
+											}, 40);
+										}}
 										on:click={(evt) => {
-											handleCardClick(evt, card, rowNum, stackNum, i);
-										}}>
+											handleCardClick({
+												card,
+												rowNum,
+												stackNum,
+												index,
+												unselectIfAlreadySelected: true,
+												evt,
+											});
+										}}
+									>
 										<Card
 											class="flex"
 											suite={card.suite}
-											value={card.value} />
+											value={card.value}
+										/>
 									</div>
 								{/each}
 							</CardPlace>
@@ -373,33 +400,43 @@
 
 			<!-- Discard Pile -->
 			<CardPlace>
-			{#each discardPile as dCard, i (dCard.key)}
-				<div
-					in:receive={{ key: dCard.key }}
-					out:send={{ key: dCard.key }}
-					class="cardWrapper"
-					data-depth={i}
-					style="margin-top: {i ? -1 * maxCardHeight + 4 : 0}px"
-				>
-					<Card
-						class="flex"
-						suite={dCard.suite}
-						value={dCard.value} />
-				</div>
-			{/each}
-		</CardPlace>
+				{#each discardPile as dCard, i (dCard.key)}
+					<div
+						in:receive={{ key: dCard.key }}
+						out:send={{ key: dCard.key }}
+						class="cardWrapper"
+						data-depth={i}
+						style="margin-top: {i ? -1 * maxCardHeight + 4 : 0}px"
+					>
+						<Card
+							class="flex"
+							suite={dCard.suite}
+							value={dCard.value}
+						/>
+					</div>
+				{/each}
+			</CardPlace>
 		</div>
 		<!-- Main Menu -->
-		<GameOverlay hidden={gameStatus === 'paused' && settingsMenuIsOpen} gameDuration={gameDuration} gameStatus={gameStatus} onResetClick={() => {
-			resumeOrStartGame(true);
-		}} onPlayClick={() => {
-			resumeOrStartGame(false);
-		}} />
+		<GameOverlay
+			hidden={gameStatus === 'paused' && settingsMenuIsOpen}
+			{gameDuration}
+			{gameStatus}
+			onResetClick={() => {
+				resumeOrStartGame(true);
+			}}
+			onPlayClick={() => {
+				resumeOrStartGame(false);
+			}}
+		/>
 		<!-- Setting Menu -->
-		<Modal open={settingsMenuIsOpen} onClose={() => {
-			settingsMenuIsOpen = false;
-			resumeGame();
-		}}>
+		<Modal
+			open={settingsMenuIsOpen}
+			onClose={() => {
+				settingsMenuIsOpen = false;
+				resumeGame();
+			}}
+		>
 			<Settings />
 		</Modal>
 	</div>

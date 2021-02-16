@@ -17,6 +17,19 @@ interface ICard {
 	suite: CardSuite;
 	value: CardValue;
 }
+
+interface IPlayCard extends ICard {
+	key: string;
+	selected?: boolean;
+}
+
+interface IPlayCardWithPos {
+	card: IPlayCard;
+	row: number;
+	stack: number;
+	index: number;
+}
+
 type GameStatus = 'new' | 'paused' | 'active' | 'complete';
 
 interface ITimeInfo {

@@ -7,8 +7,12 @@
 </script>
 
 <div
+	on:dragover
+	on:dragenter
+	on:drop
 	class={spaceJoin(['outer', 'unselectable', classStr])}
-	style="width:{maxCardWidth}px; height:{maxCardHeight}px;">
+	style="width:{maxCardWidth}px; height:{maxCardHeight}px;"
+>
 	<div class="inner" on:click>
 		<slot />
 	</div>
