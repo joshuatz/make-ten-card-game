@@ -320,6 +320,7 @@
 								on:dragover={(evt) => evt.preventDefault()}
 								on:dragenter={(evt) => evt.preventDefault()}
 								on:drop={(evt) => {
+									evt.preventDefault();
 									evt.stopPropagation();
 									comboCheckInProgress = true;
 									handleEmptyPlaceClick(rowNum, stackNum);
@@ -331,10 +332,14 @@
 							>
 								{#each stack as card, index (card.key)}
 									<div
-										draggable="true"
+										draggable={getIsCardOnTop(
+											rowNum,
+											stackNum,
+											index
+										)}
 										in:receive={{ key: card.key }}
 										out:send={{ key: card.key }}
-										class="cardWrapper draggable"
+										class="cardWrapper"
 										data-depth={index}
 										data-selected={card.selected || null}
 										data-key={card.key}
@@ -346,6 +351,8 @@
 										on:dragenter={(evt) =>
 											evt.preventDefault()}
 										on:drop={(evt) => {
+											evt.preventDefault();
+											evt.stopPropagation();
 											handleCardClick({
 												card,
 												rowNum,
@@ -368,6 +375,8 @@
 											});
 										}}
 										on:dragend={(evt) => {
+											evt.stopPropagation();
+											evt.preventDefault();
 											setTimeout(() => {
 												if (!comboCheckInProgress) {
 													unselectCard(card);

@@ -11,6 +11,9 @@
 		/&/g,
 		'%26'
 	)}`;
+	const isDev = document.location.hostname === 'localhost';
 </script>
 
-<img src={imgUrl} alt="" />
+{#if !isDev}
+	<img src={imgUrl} alt="" />
+{/if}

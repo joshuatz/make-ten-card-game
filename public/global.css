@@ -126,7 +126,7 @@ ul.toasts .toast .content {
 	-ms-user-select: none;
 	user-select: none;
 }
-.draggable {
+[draggable="true"] {
 	cursor: move;
 }
 
