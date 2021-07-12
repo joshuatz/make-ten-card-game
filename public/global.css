@@ -245,3 +245,11 @@ ul.toasts .toast .content {
 		width: calc(100% / (6/1))
 	}
 }
+
+/**
+* Svelte Component Stuff
+*/
+/* Doing this here to avoid relative path issue with Vite */
+.cardTable {
+	background-image: url('./images/felt_green.png');
+}

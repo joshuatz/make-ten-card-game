@@ -8,7 +8,7 @@
 	export { classStr as class };
 	let cardSvgPath: string;
 	$: {
-		const svgFolder = `/images/cards`;
+		const svgFolder = `./images/cards`;
 		cardSvgPath = `${svgFolder}/${value}${suite
 			.charAt(0)
 			.toUpperCase()}.svg`;

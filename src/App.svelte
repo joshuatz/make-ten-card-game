@@ -461,7 +461,6 @@
 	.cardTable {
 		min-height: 500px;
 		width: 100%;
-		background-image: url('/images/felt_green.png');
 		background-repeat: repeat;
 		border: 4px solid black;
 		border-radius: 10px;
