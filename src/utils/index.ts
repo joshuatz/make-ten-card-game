@@ -2,6 +2,7 @@ import { get } from 'svelte/store';
 import { targetSumSetting } from '../store';
 import { quintOut } from 'svelte/easing';
 import { crossfade } from 'svelte/transition';
+import { cardValueMap } from '../constants';
 
 /**
  * Randomly shuffle array *in-place*
@@ -119,6 +120,7 @@ export const generateCardAssortment = (targetSum?: number) => {
 			cards.push({
 				key: `${i}${s}`,
 				value: i,
+				valueNum: cardValueMap[i],
 				suite: s,
 			});
 		});

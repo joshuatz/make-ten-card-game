@@ -16,6 +16,7 @@ type CardValue =
 interface ICard {
 	suite: CardSuite;
 	value: CardValue;
+	valueNum: number;
 }
 
 interface IPlayCard extends ICard {

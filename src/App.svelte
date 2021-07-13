@@ -13,12 +13,7 @@
 	import Modal from './components/Modal.svelte';
 	import Settings from './components/Settings.svelte';
 	import Stopwatch from './components/Stopwatch.svelte';
-	import {
-		cardValueMap,
-		cardVOffset,
-		maxCardHeight,
-		TOAST_DELAY_MS,
-	} from './constants';
+	import { cardVOffset, maxCardHeight, TOAST_DELAY_MS } from './constants';
 	import { allowCombosGreaterThanTwo, targetSumSetting } from './store';
 	import {
 		delay,
@@ -172,7 +167,7 @@
 
 	const checkForValidCombo = async () => {
 		const target = get(targetSumSetting);
-		const parts = selectedCards.map((c) => cardValueMap[c.card.value]);
+		const parts: number[] = selectedCards.map((c) => c.card.valueNum);
 		const sum = parts.reduce((running, curr) => {
 			return running + curr;
 		}, 0);
@@ -210,15 +205,39 @@
 		}
 	};
 
+	const endGame = () => {
+		stopwatch.stop();
+		gameDuration = stopwatch.getElapsedInfo();
+		setTimeout(() => {
+			// This will trigger success popup / game menu
+			gameStatus = 'complete';
+		}, TOAST_DELAY_MS);
+	};
+
 	const checkForGameComplete = () => {
-		if (!rows.flat(2).length) {
+		const targetSum = get(targetSumSetting);
+		const remainingCards = rows.flat(2);
+		if (!remainingCards.length) {
 			notifier.success(`You won!!! 🎉🎈🎉🎈`, TOAST_DELAY_MS);
-			stopwatch.stop();
-			gameDuration = stopwatch.getElapsedInfo();
-			setTimeout(() => {
-				// This will trigger success popup / game menu
-				gameStatus = 'complete';
-			}, TOAST_DELAY_MS);
+			endGame();
+			return;
+		}
+
+		// Edge-case: High-numbers, without guaranteed pairs. Could just run out of cards
+		const largestPossibleRemainingSum = remainingCards.reduce(
+			(running, curr) => {
+				return running + curr.valueNum;
+			},
+			0
+		);
+		if (largestPossibleRemainingSum < targetSum) {
+			// Out of moves
+			notifier.success(
+				`Out of ways to make ${targetSum}. Game complete! 🎉`,
+				TOAST_DELAY_MS
+			);
+			endGame();
+			return;
 		}
 	};
 
