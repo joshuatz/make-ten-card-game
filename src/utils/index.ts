@@ -1,3 +1,8 @@
+import { get } from 'svelte/store';
+import { targetSumSetting } from '../store';
+import { quintOut } from 'svelte/easing';
+import { crossfade } from 'svelte/transition';
+
 /**
  * Randomly shuffle array *in-place*
  * @param array Array to shuffle
@@ -86,11 +91,14 @@ export const getRandomInt = (min: number, max: number) => {
 	return Math.floor(Math.random() * (max - min)) + min;
 };
 
-export const generateCardAssortment = () => {
+export const generateCardAssortment = (targetSum?: number) => {
+	if (!targetSum) {
+		targetSum = get(targetSumSetting);
+	}
 	// generate card grid data
 	const suites: Array<CardSuite> = ['diamonds', 'clubs', 'hearts', 'spades'];
-	const indexes: Array<CardValue> = [
-		'A',
+	let indexes: Array<CardValue> = [
+		'A', // 1
 		'2',
 		'3',
 		'4',
@@ -99,7 +107,12 @@ export const generateCardAssortment = () => {
 		'7',
 		'8',
 		'9',
+		'10',
+		// 'J', // 10, kept out of use
+		// 'Q', // 10, kept out of use
+		// 'K', // 10, kept out of use
 	];
+	indexes.splice(targetSum - 1);
 	const cards: IPlayCard[] = [];
 	suites.forEach((s) => {
 		indexes.forEach((i) => {
@@ -111,12 +124,44 @@ export const generateCardAssortment = () => {
 		});
 	});
 
-	// Shuffle cards and split into 3 x 4 (12 stacks of 3)
+	const totalCardCount = suites.length * indexes.length;
+	const maxStackCount = 3 * 4;
+
+	// Determine how many stacks to split cards into, where total cards can be split evenly
+	let stackCount = 2;
+	let tempStackCount = stackCount;
+	let stackDepth = totalCardCount / stackCount;
+	while (tempStackCount < maxStackCount && stackDepth > 2) {
+		tempStackCount++;
+		stackDepth = totalCardCount / tempStackCount;
+		if (stackDepth % 1 === 0) {
+			stackCount = tempStackCount;
+		}
+	}
+	stackDepth = totalCardCount / stackCount;
+
+	// Shuffle cards and split into stacks
+	// Example: standard target of 10 uses 3 x 4 (12 stacks of 3)
 	shuffleArr(cards);
-	// Split by into stacks of 3
-	const stacks: Array<Array<IPlayCard>> = chunkArr(cards, 3);
-	// Group by rows of three
-	const rows: Array<Array<Array<IPlayCard>>> = chunkArr(stacks, 4);
+
+	// Split into stacks of x (example, std 10, stackDepth = 3)
+	const stacks: Array<Array<IPlayCard>> = chunkArr(cards, stackDepth);
+
+	// Group by rows (example, std 10, x = 4)
+	let yHeight = getMedianDivisor(stackCount);
+	let rowLength = stackCount / yHeight;
+
+	// If rows cannot be split evenly (e.g. 7 stacks), then just shoot for max of four stacks wide
+	if (yHeight === 1 && stackCount > 4) {
+		rowLength = 4;
+	}
+
+	const rows: Array<Array<Array<IPlayCard>>> = chunkArr(
+		stacks,
+		rowLength,
+		true
+	);
+
 	return { stacks, rows, cards };
 };
 
@@ -138,4 +183,36 @@ export const getCardByKey = (key: string, rows: IPlayCard[][][]) => {
 			}
 		}
 	}
+};
+
+export const getMedianDivisor = (input: number) => {
+	let divisor = input;
+	const res = [];
+	while (divisor > 0) {
+		if (!(input % divisor)) {
+			res.push(divisor);
+		}
+		divisor--;
+	}
+	return res[Math.floor(res.length / 2)];
+};
+
+export const getCardCrossfade = () => {
+	const [send, receive] = crossfade({
+		duration: (d) => Math.sqrt(d * 200),
+		fallback(node, params) {
+			const style = getComputedStyle(node);
+			const transform = style.transform === 'none' ? '' : style.transform;
+
+			return {
+				duration: 600,
+				easing: quintOut,
+				css: (t) => `
+					transform: ${transform} scale(${t});
+					opacity: ${t}
+				`,
+			};
+		},
+	});
+	return { send, receive };
 };

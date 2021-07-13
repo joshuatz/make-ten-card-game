@@ -4,8 +4,8 @@
 		NotificationDisplay,
 		notifier,
 	} from '@beyonk/svelte-notifications';
-	import { quintOut } from 'svelte/easing';
-	import { crossfade } from 'svelte/transition';
+	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
 	import Analytics from './components/Analytics.svelte';
 	import Card from './components/Card.svelte';
 	import CardPlace from './components/CardPlace.svelte';
@@ -17,32 +17,16 @@
 		cardValueMap,
 		cardVOffset,
 		maxCardHeight,
-		toastDelayMs,
+		TOAST_DELAY_MS,
 	} from './constants';
-	import { allowCombosGreaterThanTwo } from './store';
-	import { delay, generateCardAssortment } from './utils/index';
+	import { allowCombosGreaterThanTwo, targetSumSetting } from './store';
+	import {
+		delay,
+		generateCardAssortment,
+		getCardCrossfade,
+	} from './utils/index';
 
-	const stackSize = 3;
-
-	const [send, receive] = crossfade({
-		duration: (d) => Math.sqrt(d * 200),
-		fallback(node, params) {
-			const style = getComputedStyle(node);
-			const transform = style.transform === 'none' ? '' : style.transform;
-
-			return {
-				duration: 600,
-				easing: quintOut,
-				css: (t) => `
-					transform: ${transform} scale(${t});
-					opacity: ${t}
-				`,
-			};
-		},
-	});
-
-	// prettier-ignore
-	const rowHeight = maxCardHeight + ((maxCardHeight - Math.abs(cardVOffset)) * stackSize);
+	const { send, receive } = getCardCrossfade();
 
 	// State stuff
 	let stopwatch: Stopwatch;
@@ -52,12 +36,15 @@
 		secs: 0,
 		mins: 0,
 	};
+	let rows: Array<Array<Array<IPlayCard>>> = [[[]]];
 	let discardPile: IPlayCard[] = [];
 	let selectedCards: Array<IPlayCardWithPos> = [];
 	let settingsMenuIsOpen = false;
 	let comboCheckInProgress = false;
-
-	let rows: Array<Array<Array<IPlayCard>>> = generateCardAssortment().rows;
+	let numCardStacksX = 0;
+	let stackSize = 0;
+	// prettier-ignore
+	$: rowHeightPx = maxCardHeight + ((maxCardHeight - Math.abs(cardVOffset)) * stackSize);
 
 	const resetSelected = () => {
 		selectedCards.forEach((c) => (c.card.selected = false));
@@ -88,13 +75,6 @@
 		rows = rows;
 	};
 
-	const fullReset = () => {
-		selectedCards = [];
-		discardPile = [];
-		const updatedRows = generateCardAssortment().rows;
-		rows = [...updatedRows];
-	};
-
 	const handleEmptyPlaceClick = (row: number, stack: number) => {
 		// Only allow moving one card at a time
 		if (selectedCards.length === 1) {
@@ -113,7 +93,10 @@
 			// Force update
 			rows = rows;
 		} else if (selectedCards.length > 1) {
-			notifier.danger(`You can only move one card to an open spot 🚫`);
+			notifier.danger(
+				`You can only move one card to an open spot 🚫`,
+				TOAST_DELAY_MS
+			);
 			resetSelected();
 		}
 	};
@@ -188,6 +171,7 @@
 	};
 
 	const checkForValidCombo = async () => {
+		const target = get(targetSumSetting);
 		const parts = selectedCards.map((c) => cardValueMap[c.card.value]);
 		const sum = parts.reduce((running, curr) => {
 			return running + curr;
@@ -196,24 +180,28 @@
 		const equationStr = `${parts.join(' + ')} = ${sum}`;
 
 		// Woo!
-		if (sum === 10) {
-			notifier.success(`${equationStr}. Great job! 🙌`);
+		if (sum === target) {
+			notifier.success(`${equationStr}. Great job! 🙌`, TOAST_DELAY_MS);
 			// Move over to discard pile
 			discardCards(selectedCards.map((s) => s.card));
 			return;
 		}
-		// If over 10, flash warning and reset cards
-		else if (sum > 10) {
-			notifier.warning(`${equationStr}. Over 10 😭`);
+		// If over target, flash warning and reset cards
+		else if (sum > target) {
+			notifier.warning(
+				`${equationStr}. Over ${target} 😭`,
+				TOAST_DELAY_MS
+			);
 			// leave time for unselect animation
 			resetSelected();
 			rows = rows;
 			return;
 		}
-		// If under 10, and 2 cards are already selected with max cards = 2
+		// If under target, and 2 cards are already selected with max cards = 2
 		else if (!$allowCombosGreaterThanTwo && parts.length >= 2) {
 			notifier.warning(
-				`${equationStr}. Under 10, and only two cards allowed 😭`
+				`${equationStr}. Under ${target}, and only two cards allowed 😭`,
+				TOAST_DELAY_MS
 			);
 			// leave time for unselect animation
 			resetSelected();
@@ -224,13 +212,13 @@
 
 	const checkForGameComplete = () => {
 		if (!rows.flat(2).length) {
-			notifier.success(`You won!!! 🎉🎈🎉🎈`);
+			notifier.success(`You won!!! 🎉🎈🎉🎈`, TOAST_DELAY_MS);
 			stopwatch.stop();
 			gameDuration = stopwatch.getElapsedInfo();
 			setTimeout(() => {
 				// This will trigger success popup / game menu
 				gameStatus = 'complete';
-			}, toastDelayMs);
+			}, TOAST_DELAY_MS);
 		}
 	};
 
@@ -248,16 +236,24 @@
 		}
 	};
 
+	const resetCards = () => {
+		selectedCards = [];
+		discardPile = [];
+		const updatedRows = generateCardAssortment().rows;
+		rows = [...updatedRows];
+		numCardStacksX = rows[0].length;
+		stackSize = rows[0][0].length;
+	};
+
 	const resumeOrStartGame = (forceRestart: boolean = false) => {
 		let resumeDelay = 0;
 		if (gameStatus === 'new' || gameStatus === 'complete' || forceRestart) {
 			// Give a little extra time to look at game board
 			resumeDelay = 1000;
-			// Prior game on board - clean up mess
-			if (discardPile.length || gameStatus !== 'new') {
-				fullReset();
-				stopwatch.reset();
-			}
+
+			// Full reset
+			resetCards();
+			stopwatch.reset();
 		}
 
 		gameStatus = 'active';
@@ -266,13 +262,30 @@
 			stopwatch.start();
 		}, resumeDelay);
 	};
+
+	onMount(() => {
+		resetCards();
+		let initialValFired = false;
+		targetSumSetting.subscribe(() => {
+			if (!initialValFired) {
+				initialValFired = true;
+			} else if (gameStatus !== 'new') {
+				resumeOrStartGame(true);
+			}
+		});
+	});
 </script>
 
-<main>
+<main style="--numCardStacksX:{numCardStacksX};">
 	<Analytics />
-	<NotificationDisplay timeout={toastDelayMs} />
+	<NotificationDisplay timeout={TOAST_DELAY_MS} />
 	<div class="row">
-		<h1 class="xs6 sm3 md2 center">{appName}</h1>
+		<div class="appTitle xs6 sm3 md2 center">
+			<h1>{appName}</h1>
+			{#if $targetSumSetting !== 10}
+				<div class="targetSumTitle">{$targetSumSetting}</div>
+			{/if}
+		</div>
 		<div class="row vCenter xs6 sm3 md4">
 			<div class="xs2" style="min-width: 126px;">
 				<Stopwatch bind:this={stopwatch} />
@@ -311,7 +324,7 @@
 			{#each rows as row, rowNum}
 				<div
 					class="row cardRow"
-					style="min-height:{rowHeight}px;"
+					style="min-height:{rowHeightPx}px;"
 					data-renderedat={new Date().getTime()}
 				>
 					{#each row as stack, stackNum}
@@ -461,7 +474,6 @@
 	.cardTable {
 		min-height: 500px;
 		width: 100%;
-		background-image: url('/images/felt_green.png');
 		background-repeat: repeat;
 		border: 4px solid black;
 		border-radius: 10px;
@@ -473,7 +485,7 @@
 	.cardStack {
 		display: flex;
 		position: relative;
-		width: calc(100% * (1 / 4));
+		width: calc(100% * (1 / var(--numCardStacksX, 4)));
 	}
 	.cardWrapper {
 		transition: all 0.2s linear;
@@ -482,5 +494,27 @@
 	.cardWrapper[data-selected] {
 		transform: scale(1.2);
 		box-shadow: 0 0 20px 3px #0ff;
+	}
+	.appTitle {
+		position: relative;
+	}
+	.appTitle .targetSumTitle {
+		position: absolute;
+		top: 23%;
+		left: calc(50% - 30px);
+		background-color: white;
+		color: red;
+		min-width: 55px;
+		min-height: 50px;
+		border: 1px dashed red;
+		box-shadow: 0 0 4px 2px rgb(255 103 103 / 55%);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		transform: rotate(5deg);
+		font-size: 2rem;
+	}
+	:global(.toasts) {
+		pointer-events: none;
 	}
 </style>

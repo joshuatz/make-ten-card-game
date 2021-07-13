@@ -16,11 +16,17 @@ Nothing to install; published as a SPA at: [make-ten-card-game.netlify.app/](htt
 
 The goal of the game is pretty simple (this is geared towards elementary students). You want to combine cards from the top of the stacks to "make ten", over and over, until there are no cards left. Once an entire stack has been cleared, you can also move top cards into the empty spaces.
 
+Update: You can now require different sums other than just `10`
+
 ## Development
 This is your fairly standard Svelte 3 + TypeScript project.
 
- - `yarn` to install dependencies
- - `yarn build` to create production HTML folder
- - `yarn dev` to serve with watcher (re-builds and serves on file changes)
+ - `npm install` to install dependencies
+ - `npm run build` to create production HTML folder
+ - `npm run dev` to serve with watcher (re-builds and serves on file changes)
 
-<!-- ## Change Notes -->
+## Change Notes
+Version | Date | Notes
+--- | --- | ---
+`1.1.0` | July 12th, 2021 | Add support for other sums than 10
+`1.0.0` | October 2nd, 2020 | Initial release 🚀

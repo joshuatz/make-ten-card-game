@@ -20,7 +20,7 @@ export const cardValueMap: Record<CardValue, number> = {
 	'8': 8,
 	'9': 9,
 	'10': 10,
-	// Not actualy in use...
+	// Not actually in use...
 	J: 10,
 	Q: 10,
 	K: 10,
@@ -29,6 +29,6 @@ export const cardValueMap: Record<CardValue, number> = {
 /**
  * Configuration
  */
-export const toastDelayMs = 3 * 1000;
+export const TOAST_DELAY_MS = 3 * 1000;
 export const APP_NAME = 'Make Ten Game';
 export const REPO_URL = 'https://github.com/joshuatz/make-ten-card-game';

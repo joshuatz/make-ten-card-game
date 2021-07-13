@@ -141,6 +141,9 @@ ul.toasts .toast .content {
 	flex-wrap: wrap;
 	width: 100%;
 }
+.col {
+	flex-grow: 1;
+}
 /** Break Points */
 /** xs (< 600px) */
 .xs6 {
@@ -244,4 +247,12 @@ ul.toasts .toast .content {
 	.xl1 {
 		width: calc(100% / (6/1))
 	}
+}
+
+/**
+* Svelte Component Stuff
+*/
+/* Doing this here to avoid relative path issue with Vite */
+.cardTable {
+	background-image: url('./images/felt_green.png');
 }

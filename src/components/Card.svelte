@@ -8,8 +8,9 @@
 	export { classStr as class };
 	let cardSvgPath: string;
 	$: {
-		const svgFolder = `/images/cards`;
-		cardSvgPath = `${svgFolder}/${value}${suite
+		const svgFolder = `./images/cards`;
+		// Deck uses 'T' for 10
+		cardSvgPath = `${svgFolder}/${value === '10' ? 'T' : value}${suite
 			.charAt(0)
 			.toUpperCase()}.svg`;
 	}
