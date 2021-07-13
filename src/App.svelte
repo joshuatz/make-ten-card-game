@@ -5,9 +5,7 @@
 		notifier,
 	} from '@beyonk/svelte-notifications';
 	import { onMount } from 'svelte';
-	import { quintOut } from 'svelte/easing';
 	import { get } from 'svelte/store';
-	import { crossfade } from 'svelte/transition';
 	import Analytics from './components/Analytics.svelte';
 	import Card from './components/Card.svelte';
 	import CardPlace from './components/CardPlace.svelte';
@@ -22,26 +20,13 @@
 		TOAST_DELAY_MS,
 	} from './constants';
 	import { allowCombosGreaterThanTwo, targetSumSetting } from './store';
-	import { delay, generateCardAssortment } from './utils/index';	
+	import {
+		delay,
+		generateCardAssortment,
+		getCardCrossfade,
+	} from './utils/index';
 
-	const [send, receive] = crossfade({
-		duration: (d) => Math.sqrt(d * 200),
-		fallback(node, params) {
-			const style = getComputedStyle(node);
-			const transform = style.transform === 'none' ? '' : style.transform;
-
-			return {
-				duration: 600,
-				easing: quintOut,
-				css: (t) => `
-					transform: ${transform} scale(${t});
-					opacity: ${t}
-				`,
-			};
-		},
-	});
-
-	
+	const { send, receive } = getCardCrossfade();
 
 	// State stuff
 	let stopwatch: Stopwatch;
@@ -108,7 +93,10 @@
 			// Force update
 			rows = rows;
 		} else if (selectedCards.length > 1) {
-			notifier.danger(`You can only move one card to an open spot 🚫`, TOAST_DELAY_MS);
+			notifier.danger(
+				`You can only move one card to an open spot 🚫`,
+				TOAST_DELAY_MS
+			);
 			resetSelected();
 		}
 	};
@@ -200,7 +188,10 @@
 		}
 		// If over target, flash warning and reset cards
 		else if (sum > target) {
-			notifier.warning(`${equationStr}. Over ${target} 😭`, TOAST_DELAY_MS);
+			notifier.warning(
+				`${equationStr}. Over ${target} 😭`,
+				TOAST_DELAY_MS
+			);
 			// leave time for unselect animation
 			resetSelected();
 			rows = rows;
@@ -209,7 +200,8 @@
 		// If under target, and 2 cards are already selected with max cards = 2
 		else if (!$allowCombosGreaterThanTwo && parts.length >= 2) {
 			notifier.warning(
-				`${equationStr}. Under ${target}, and only two cards allowed 😭`, TOAST_DELAY_MS
+				`${equationStr}. Under ${target}, and only two cards allowed 😭`,
+				TOAST_DELAY_MS
 			);
 			// leave time for unselect animation
 			resetSelected();
@@ -251,7 +243,7 @@
 		rows = [...updatedRows];
 		numCardStacksX = rows[0].length;
 		stackSize = rows[0][0].length;
-	}
+	};
 
 	const resumeOrStartGame = (forceRestart: boolean = false) => {
 		let resumeDelay = 0;
@@ -284,7 +276,6 @@
 			}
 		});
 	});
-	
 </script>
 
 <main style="--numCardStacksX:{numCardStacksX};">

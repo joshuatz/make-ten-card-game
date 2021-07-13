@@ -29,7 +29,7 @@
 		if (!isRunning) {
 			startTimeMs = new Date().getTime();
 			isRunning = true;
-			timerHandle = setInterval(handleUpdate, pollingMs);
+			timerHandle = window.setInterval(handleUpdate, pollingMs);
 		}
 	};
 

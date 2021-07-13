@@ -1,5 +1,7 @@
 import { get } from 'svelte/store';
 import { targetSumSetting } from '../store';
+import { quintOut } from 'svelte/easing';
+import { crossfade } from 'svelte/transition';
 
 /**
  * Randomly shuffle array *in-place*
@@ -189,4 +191,24 @@ export const getMedianDivisor = (input: number) => {
 		divisor--;
 	}
 	return res[Math.floor(res.length / 2)];
+};
+
+export const getCardCrossfade = () => {
+	const [send, receive] = crossfade({
+		duration: (d) => Math.sqrt(d * 200),
+		fallback(node, params) {
+			const style = getComputedStyle(node);
+			const transform = style.transform === 'none' ? '' : style.transform;
+
+			return {
+				duration: 600,
+				easing: quintOut,
+				css: (t) => `
+					transform: ${transform} scale(${t});
+					opacity: ${t}
+				`,
+			};
+		},
+	});
+	return { send, receive };
 };
