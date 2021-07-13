@@ -250,12 +250,10 @@
 		if (gameStatus === 'new' || gameStatus === 'complete' || forceRestart) {
 			// Give a little extra time to look at game board
 			resumeDelay = 1000;
-			// Prior game on board - clean up mess
-			if (discardPile.length || gameStatus !== 'new') {
-				// Full reset
-				resetCards();
-				stopwatch.reset();
-			}
+
+			// Full reset
+			resetCards();
+			stopwatch.reset();
 		}
 
 		gameStatus = 'active';
@@ -271,7 +269,7 @@
 		targetSumSetting.subscribe(() => {
 			if (!initialValFired) {
 				initialValFired = true;
-			} else {
+			} else if (gameStatus !== 'new') {
 				resumeOrStartGame(true);
 			}
 		});

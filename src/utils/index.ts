@@ -98,7 +98,7 @@ export const generateCardAssortment = (targetSum?: number) => {
 	// generate card grid data
 	const suites: Array<CardSuite> = ['diamonds', 'clubs', 'hearts', 'spades'];
 	let indexes: Array<CardValue> = [
-		'A',
+		'A', // 1
 		'2',
 		'3',
 		'4',
@@ -107,6 +107,10 @@ export const generateCardAssortment = (targetSum?: number) => {
 		'7',
 		'8',
 		'9',
+		'10',
+		// 'J', // 10, kept out of use
+		// 'Q', // 10, kept out of use
+		// 'K', // 10, kept out of use
 	];
 	indexes.splice(targetSum - 1);
 	const cards: IPlayCard[] = [];

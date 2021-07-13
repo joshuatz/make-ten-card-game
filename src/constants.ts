@@ -20,7 +20,7 @@ export const cardValueMap: Record<CardValue, number> = {
 	'8': 8,
 	'9': 9,
 	'10': 10,
-	// Not actualy in use...
+	// Not actually in use...
 	J: 10,
 	Q: 10,
 	K: 10,

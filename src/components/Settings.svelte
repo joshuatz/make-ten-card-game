@@ -6,35 +6,31 @@
 	for (let x=minTargetSum; x<maxTargetSum + 1; x++) {
 		targetSteps.push(x);
 	}
+
+	targetSumSetting.subscribe((sum) => {
+		allowCombosGreaterThanTwo.set(sum > 10);
+	})
 </script>
 
 <div class="settingsPanel">
 	<div class="row">
 		<div class="xs6">
-			<label class="row">
-				<span class="xs5">Allow for combinations of more than two cards
-					to be used to make ten</span>
+			<label class="formRow row">
+				<span class="text">Allow for combinations of more than two cards.</span>
 				<input
-					class="xs1"
+					class="allowMoreThanTwoCombo"
 					type="checkbox"
-					bind:checked={$allowCombosGreaterThanTwo} />
-			</label>
-			<label class="row">
-				<span class="xs4">Pick a different target sum:</span>
-				<input
-					class="xs2"
-					type="number"
-					step="1"
-					bind:value={$targetSumSetting}
-					min={2}
-					max={20}
+					bind:checked={$allowCombosGreaterThanTwo} 
 				/>
 			</label>
-			<div class="row">
+			<div class="formRow row targetSum">
+				<div class="row">
+					<p class="text">Goal sum:</p>
+				</div>
 				{#each targetSteps as targetSumOption}
 					<button
 						title="Set target to {targetSumOption}"
-						class="fancyBtn targetSum flex center col" 
+						class="fancyBtn flex center col" 
 						data-is-current-target={targetSumOption === $targetSumSetting}
 						on:click={() => {
 							targetSumSetting.set(targetSumOption);
@@ -49,10 +45,25 @@
 </div>
 
 <style>
+	.formRow {
+		margin: 8px auto;
+		align-items: center;
+	}
+	.formRow .text {
+		font-size: 1.2rem;
+	}
+	input.allowMoreThanTwoCombo {
+		margin: auto auto auto 20px;
+		transform: scale(2.4);
+	}
 	label {
 		margin-bottom: 10px;
 	}
-	.targetSum {
+	.targetSum .text {
+		margin-left: 20px;
+		font-size: 1.4rem;
+	}
+	.targetSum button {
 		box-sizing: content-box;
 		background-color: rgb(126, 21, 21);
 		color: white;
@@ -61,7 +72,7 @@
 		width: 20px;
 		max-width: 20px;
 	}
-	.targetSum[data-is-current-target="true"] {
+	.targetSum button[data-is-current-target="true"] {
 		background-color: #0078D7;
 	}
 </style>
