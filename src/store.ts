@@ -6,6 +6,8 @@ const persistenceKeys = {
 };
 
 export const allowCombosGreaterThanTwo = writable<boolean>(false);
+export const targetSumSetting = writable<number>(10);
+
 // Store on change
 allowCombosGreaterThanTwo.subscribe((value) => {
 	localForage.setItem(persistenceKeys.allowCombosGreaterThanTwo, value);

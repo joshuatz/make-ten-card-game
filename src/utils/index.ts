@@ -1,3 +1,6 @@
+import { get } from 'svelte/store';
+import { targetSumSetting } from '../store';
+
 /**
  * Randomly shuffle array *in-place*
  * @param array Array to shuffle
@@ -86,10 +89,13 @@ export const getRandomInt = (min: number, max: number) => {
 	return Math.floor(Math.random() * (max - min)) + min;
 };
 
-export const generateCardAssortment = () => {
+export const generateCardAssortment = (targetSum?: number) => {
+	if (!targetSum) {
+		targetSum = get(targetSumSetting);
+	}
 	// generate card grid data
 	const suites: Array<CardSuite> = ['diamonds', 'clubs', 'hearts', 'spades'];
-	const indexes: Array<CardValue> = [
+	let indexes: Array<CardValue> = [
 		'A',
 		'2',
 		'3',
@@ -100,6 +106,7 @@ export const generateCardAssortment = () => {
 		'8',
 		'9',
 	];
+	indexes.splice(targetSum - 1);
 	const cards: IPlayCard[] = [];
 	suites.forEach((s) => {
 		indexes.forEach((i) => {
@@ -111,12 +118,44 @@ export const generateCardAssortment = () => {
 		});
 	});
 
-	// Shuffle cards and split into 3 x 4 (12 stacks of 3)
+	const totalCardCount = suites.length * indexes.length;
+	const maxStackCount = 3 * 4;
+
+	// Determine how many stacks to split cards into, where total cards can be split evenly
+	let stackCount = 2;
+	let tempStackCount = stackCount;
+	let stackDepth = totalCardCount / stackCount;
+	while (tempStackCount < maxStackCount && stackDepth > 2) {
+		tempStackCount++;
+		stackDepth = totalCardCount / tempStackCount;
+		if (stackDepth % 1 === 0) {
+			stackCount = tempStackCount;
+		}
+	}
+	stackDepth = totalCardCount / stackCount;
+
+	// Shuffle cards and split into stacks
+	// Example: standard target of 10 uses 3 x 4 (12 stacks of 3)
 	shuffleArr(cards);
-	// Split by into stacks of 3
-	const stacks: Array<Array<IPlayCard>> = chunkArr(cards, 3);
-	// Group by rows of three
-	const rows: Array<Array<Array<IPlayCard>>> = chunkArr(stacks, 4);
+
+	// Split into stacks of x (example, std 10, stackDepth = 3)
+	const stacks: Array<Array<IPlayCard>> = chunkArr(cards, stackDepth);
+
+	// Group by rows (example, std 10, x = 4)
+	let yHeight = getMedianDivisor(stackCount);
+	let rowLength = stackCount / yHeight;
+
+	// If rows cannot be split evenly (e.g. 7 stacks), then just shoot for max of four stacks wide
+	if (yHeight === 1 && stackCount > 4) {
+		rowLength = 4;
+	}
+
+	const rows: Array<Array<Array<IPlayCard>>> = chunkArr(
+		stacks,
+		rowLength,
+		true
+	);
+
 	return { stacks, rows, cards };
 };
 
@@ -138,4 +177,16 @@ export const getCardByKey = (key: string, rows: IPlayCard[][][]) => {
 			}
 		}
 	}
+};
+
+export const getMedianDivisor = (input: number) => {
+	let divisor = input;
+	const res = [];
+	while (divisor > 0) {
+		if (!(input % divisor)) {
+			res.push(divisor);
+		}
+		divisor--;
+	}
+	return res[Math.floor(res.length / 2)];
 };

@@ -55,7 +55,7 @@
 			</div>
 			<div class="row aboutSection">
 				<p class="row center">
-					This is an addition game, where you try to "make ten" out of
+					This is an addition game, where you try to "make ten" (or other sums) out of
 					different combinations of playing cards, picking them off
 					the top of the stacks. You can also move top cards to empty
 					spots, once you have cleared a stack. Aces are equal to 1.

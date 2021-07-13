@@ -141,6 +141,9 @@ ul.toasts .toast .content {
 	flex-wrap: wrap;
 	width: 100%;
 }
+.col {
+	flex-grow: 1;
+}
 /** Break Points */
 /** xs (< 600px) */
 .xs6 {
