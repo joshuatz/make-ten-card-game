@@ -28,5 +28,6 @@ This is your fairly standard Svelte 3 + TypeScript project.
 ## Change Notes
 Version | Date | Notes
 --- | --- | ---
+`1.2.0` | July  14th, 2023 | Fix up setting restoration feature
 `1.1.0` | July 12th, 2021 | Add support for other sums than 10
 `1.0.0` | October 2nd, 2020 | Initial release 🚀

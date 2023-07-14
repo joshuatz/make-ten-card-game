@@ -3,24 +3,29 @@
 	const minTargetSum = 2;
 	const maxTargetSum = 20;
 	const targetSteps: number[] = [];
-	for (let x=minTargetSum; x<maxTargetSum + 1; x++) {
+	for (let x = minTargetSum; x < maxTargetSum + 1; x++) {
 		targetSteps.push(x);
 	}
 
-	targetSumSetting.subscribe((sum) => {
-		allowCombosGreaterThanTwo.set(sum > 10);
-	})
+	const updateTargetSumSetting = (updatedTargetSumSettings: number) => {
+		if (updatedTargetSumSettings > 10) {
+			allowCombosGreaterThanTwo.set(true);
+		}
+		targetSumSetting.set(updatedTargetSumSettings);
+	};
 </script>
 
 <div class="settingsPanel">
 	<div class="row">
 		<div class="xs6">
 			<label class="formRow row">
-				<span class="text">Allow for combinations of more than two cards.</span>
+				<span class="text"
+					>Allow for combinations of more than two cards.</span
+				>
 				<input
 					class="allowMoreThanTwoCombo"
 					type="checkbox"
-					bind:checked={$allowCombosGreaterThanTwo} 
+					bind:checked={$allowCombosGreaterThanTwo}
 				/>
 			</label>
 			<div class="formRow row targetSum">
@@ -30,10 +35,11 @@
 				{#each targetSteps as targetSumOption}
 					<button
 						title="Set target to {targetSumOption}"
-						class="fancyBtn flex center col" 
-						data-is-current-target={targetSumOption === $targetSumSetting}
+						class="fancyBtn flex center col"
+						data-is-current-target={targetSumOption ===
+							$targetSumSetting}
 						on:click={() => {
-							targetSumSetting.set(targetSumOption);
+							updateTargetSumSetting(targetSumOption);
 						}}
 					>
 						{targetSumOption}
@@ -72,7 +78,7 @@
 		width: 20px;
 		max-width: 20px;
 	}
-	.targetSum button[data-is-current-target="true"] {
-		background-color: #0078D7;
+	.targetSum button[data-is-current-target='true'] {
+		background-color: #0078d7;
 	}
 </style>
